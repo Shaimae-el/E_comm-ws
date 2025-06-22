@@ -1,4 +1,3 @@
-// script.js MIS A JOUR
 const productContainer = document.getElementById("products");
 const pagination = document.getElementById("pagination");
 const categorySelect = document.getElementById("category");
@@ -116,6 +115,17 @@ function generatePagination() {
   }
 }
 
+function animateAddToCart(imgSrc) {
+  const img = document.createElement('img');
+  img.src = imgSrc;
+  img.className = 'fly-to-cart';
+  document.body.appendChild(img);
+
+  img.addEventListener('animationend', () => {
+    img.remove();
+  });
+}
+
 function addToCart(id, qty = 1) {
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
   const existing = cart.find(item => item.id === id);
@@ -125,6 +135,10 @@ function addToCart(id, qty = 1) {
     cart.push({ id, qty });
   }
   localStorage.setItem("cart", JSON.stringify(cart));
+
+  const product = productsData.find(p => p.id === id);
+  if (product) animateAddToCart(product.thumbnail);
+
   alert("Produit ajouté au panier !");
 }
 
@@ -148,5 +162,14 @@ function showDetails(id) {
       new bootstrap.Modal(document.getElementById("productModal")).show();
     });
 }
+
+window.addEventListener('scroll', () => {
+  const navbar = document.querySelector('.navbar');
+  if (window.scrollY > 20) {
+    navbar.classList.add('scrolled');
+  } else {
+    navbar.classList.remove('scrolled');
+  }
+});
 
 loadProducts();
