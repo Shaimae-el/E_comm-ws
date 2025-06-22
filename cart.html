@@ -1,58 +1,94 @@
+<!-- cart.html MIS A JOUR -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Panier</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="index.html">⬅ Retour</a>
-      <span class="navbar-text text-white">Mon Panier</span>
-    </div>
-  </nav>
-
-  <div class="container mt-4">
-    <h3 class="mb-3">Produits dans le panier</h3>
-    <div class="row" id="cart-items"></div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="index.html">⬅ Retour</a>
+    <span class="navbar-text text-white">Mon Panier</span>
   </div>
+</nav>
 
-  <script>
-    const cartItemsContainer = document.getElementById("cart-items");
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+<div class="container mt-4">
+  <h3 class="mb-3">Produits dans le panier</h3>
+  <div id="cartItems" class="row"></div>
+  <h4 class="mt-4">Total : <span id="totalAmount">0</span> $</h4>
+</div>
+
+<script>
+  const cartItemsDiv = document.getElementById("cartItems");
+  const totalAmount = document.getElementById("totalAmount");
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+  async function fetchProduct(id) {
+    const res = await fetch(`https://dummyjson.com/products/${id}`);
+    return res.json();
+  }
+
+  async function loadCart() {
+    cartItemsDiv.innerHTML = "";
+    let total = 0;
 
     if (cart.length === 0) {
-      cartItemsContainer.innerHTML = '<p class="text-center">Votre panier est vide.</p>';
-    } else {
-      fetch("https://dummyjson.com/products")
-        .then(res => res.json())
-        .then(data => {
-          const products = data.products.filter(p => cart.includes(p.id));
-          products.forEach(product => {
-            cartItemsContainer.innerHTML += `
-              <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                  <img src="${product.thumbnail}" class="card-img-top" alt="${product.title}">
-                  <div class="card-body">
-                    <h5 class="card-title">${product.title}</h5>
-                    <p class="card-text">${product.price} $</p>
-                    <button class="btn btn-danger" onclick="removeFromCart(${product.id})">Retirer</button>
-                  </div>
-                </div>
-              </div>
-            `;
-          });
-        });
+      cartItemsDiv.innerHTML = '<p class="text-center">Votre panier est vide.</p>';
+      totalAmount.textContent = "0";
+      return;
     }
 
-    function removeFromCart(id) {
-      cart = cart.filter(pid => pid !== id);
-      localStorage.setItem("cart", JSON.stringify(cart));
-      location.reload();
+    for (const item of cart) {
+      const product = await fetchProduct(item.id);
+      const subtotal = item.qty * product.price;
+      total += subtotal;
+
+      const div = document.createElement("div");
+      div.className = "col-md-6 mb-4";
+      div.innerHTML = `
+        <div class="card p-3">
+          <div class="d-flex">
+            <img src="${product.thumbnail}" class="me-3" style="width: 100px; height: 100px; object-fit: cover;">
+            <div>
+              <h5>${product.title}</h5>
+              <p>Prix unitaire : ${product.price} $</p>
+              <div>
+                Quantité :
+                <button class="btn btn-sm btn-outline-secondary" onclick="updateQty(${item.id}, -1)">-</button>
+                <span id="qty-${item.id}" class="mx-2">${item.qty}</span>
+                <button class="btn btn-sm btn-outline-secondary" onclick="updateQty(${item.id}, 1)">+</button>
+                <button class="btn btn-sm btn-danger ms-2" onclick="removeItem(${item.id})">🗑️</button>
+              </div>
+              <p class="mt-2">Sous-total : ${subtotal.toFixed(2)} $</p>
+            </div>
+          </div>
+        </div>
+      `;
+      cartItemsDiv.appendChild(div);
     }
-  </script>
+
+    totalAmount.textContent = total.toFixed(2);
+  }
+
+  function updateQty(id, delta) {
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+    item.qty = Math.max(1, item.qty + delta);
+    localStorage.setItem("cart", JSON.stringify(cart));
+    loadCart();
+  }
+
+  function removeItem(id) {
+    cart = cart.filter(i => i.id !== id);
+    localStorage.setItem("cart", JSON.stringify(cart));
+    loadCart();
+  }
+
+  loadCart();
+</script>
 </body>
 </html>
