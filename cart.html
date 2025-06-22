@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panier</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="index.html">⬅ Retour</a>
+      <span class="navbar-text text-white">Mon Panier</span>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <h3 class="mb-3">Produits dans le panier</h3>
+    <div class="row" id="cart-items"></div>
+  </div>
+
+  <script>
+    const cartItemsContainer = document.getElementById("cart-items");
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    if (cart.length === 0) {
+      cartItemsContainer.innerHTML = '<p class="text-center">Votre panier est vide.</p>';
+    } else {
+      fetch("https://dummyjson.com/products")
+        .then(res => res.json())
+        .then(data => {
+          const products = data.products.filter(p => cart.includes(p.id));
+          products.forEach(product => {
+            cartItemsContainer.innerHTML += `
+              <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                  <img src="${product.thumbnail}" class="card-img-top" alt="${product.title}">
+                  <div class="card-body">
+                    <h5 class="card-title">${product.title}</h5>
+                    <p class="card-text">${product.price} $</p>
+                    <button class="btn btn-danger" onclick="removeFromCart(${product.id})">Retirer</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+        });
+    }
+
+    function removeFromCart(id) {
+      cart = cart.filter(pid => pid !== id);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      location.reload();
+    }
+  </script>
+</body>
+</html>
